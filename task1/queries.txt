@@ -1,0 +1,46 @@
+
+2a)
+MATCH (n:Node) RETURN n.time, COUNT(*)
+
+Die Anzahl der Knoten steigt von ca 40k auf 120k über alle Zeitschritte
+
+2b)
+MATCH (:Node)-[s:SEGMENT]-(:Node) return s.time, COUNT(*)
+
+Anzahl Kanten steigt von ca. 100k auf 370k
+
+2c)
+MATCH (n:Loop) RETURN n.time, COUNT(*)
+
+Anstieg von 2,4K auf 15K
+
+2d) 
+MATCH (n:Loop) WITH n, size((n)-[:CONSISTS_OF]->(:Node)<-[:CONSISTS_OF]-(:Loop)) as g RETURN AVG(g) as gg
+
+Ergebnis: 16.874770585593915
+
+2e)
+MATCH (n:Loop) WHERE NOT (n)--()--(:Loop) RETURN COUNT(n)
+
+alternativ:
+MATCH (n:Loop) WHERE not exists((n)--()--(:Loop)) RETURN COUNT(n)
+
+Ergebnis: 21
+
+2f)
+MATCH (n:Loop) WHERE size((n)--(:Node)) >= 10 AND n.burges_vector = 1 AND n.slip_normal = 1 RETURN n.time, COUNT(n)
+
+Ergebnis : {}
+Es gab auch keine loops mit burges_vector = 1 UND slip_normal = 1, weswegen dieses Ergebnis stimmt
+
+
+3b) MATCH (l:Loop)-[:CONSISTS_OF]->(:Node)<-[:CONSISTS_OF]-(j:Junction) return distinct l.id, collect(j.id)
+
+3c) Match (l:Loop)-[:CONSISTS_OF]->(:Node)<-[:CONSISTS_OF]-(j:Junction{type:5}) return l.time, j.id
+
+3d) Match (l:Loop)-[:CONSISTS_OF]->(:Node)<-[:CONSISTS_OF]-(j:Junction) return l.time, j.type, l.id
+
+3e) Match (l:Loop)-[:CONSISTS_OF]->(n:Node)<-[:CONSISTS_OF]-(k:Loop) where 
+	exists {Match (l)-[:CONSISTS_OF]->(:Node)<-[:CONSISTS_OF]-(j:Junction{type:1})} 
+	and exists {Match (k)-[:CONSISTS_OF]->(:Node)<-[:CONSISTS_OF]-(j:Junction) where j.type=2 or j.type=5}
+	return l, k
