@@ -17,4 +17,4 @@ MATCH (n:Junction) RETURN n LIMIT 25
 MATCH (n:Loop) RETURN Count(n)
 
 Loop mit 4 Knoten und einer Junction:
-id 758 time 50
+id 5 time 50
