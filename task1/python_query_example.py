@@ -1,7 +1,8 @@
 import pandas as pd
 from neo4j import GraphDatabase
+from dbconfig import *
 
-uri, user, password = "bolt://localhost:7689", "neo4j", "password"
+uri = "bolt://localhost:7689"
 driver = GraphDatabase.driver(uri, auth=(user, password))
 
 
@@ -20,3 +21,4 @@ query_count_loops_in_timeslice = """
 params = {"time": 50}
 result = run_query(query_count_loops_in_timeslice, params)
 driver.close()
+print(result)
