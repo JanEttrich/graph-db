@@ -8,9 +8,10 @@ Aufgabe 2.2: FIll in se blank
 
 
 1)/4)
-Match (j:Junction)-[:CONSISTS_OF]->(n:Node)-[:SEGMENT{is_junction:false}*]->(m:Node)<-[:CONSISTS_OF]-(i:Junction),
+Match (j:Junction)-[:CONSISTS_OF]->(n:Node)-[:SEGMENT*{is_junction:false}]->(m:Node)<-[:CONSISTS_OF]-(i:Junction)
+
 (n)<-[:CONSISTS_OF]-(l:Loop)-[:CONSISTS_OF]->(m) 
-Create (n)-[:is_path]-(p:Path)-[:is_path]-(m)
+Merge (n)-[:is_path]-(p:Path)-[:is_path]-(m) return p
 
 2/3) Match (p:Path) with p, (n:Node)-[:is_path]-(p)-[:is_path]-(m:Node),
 x=(n:Node)-[:SEGMENT{is_junction:false}*]->(m:Node) return p
@@ -18,5 +19,7 @@ x=(n:Node)-[:SEGMENT{is_junction:false}*]->(m:Node) return p
 Set p.length=length(x), p.time=n.time, p.id=toString(n.id)+"_"+toString(m.id)
 geometrische Länge
 
-
- 
+Currently tested Query:
+Match len=(j:Junction)-[:CONSISTS_OF]->(n:Node{time:50})-[:SEGMENT*{is_junction:false}]->(m:Node)<-[:CONSISTS_OF]-(i:Junction), 
+(n)<-[:CONSISTS_OF]-(l:Loop)-[:CONSISTS_OF]->(m) 
+Merge (n)<-[:IN_PATH]-(p:Path{time:n.time,id:toString(n.id)+"-"+toString(m.id), path_length:length(len)-2})-[:IN_PATH]->(m) return p
