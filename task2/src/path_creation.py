@@ -27,10 +27,10 @@ query_create_paths_self_loop = """
     MERGE (n)<-[:STARTS_WITH]-(p:Path{time:n.time,start_junc:j.global_id, end_junc:j.global_id, path_length:length(len)-2, loop_id:l.id})-[:ENDS_WITH]->(m)
     """
 
-query_create_paths_length_one ="""
+query_create_paths_length_one = """
     MATCH (j:Junction)-[:CONSISTS_OF]->(n:Node{time:$time})-[:SEGMENT{is_junction:$is_junction}]->(m:Node)<-[:CONSISTS_OF]-(i:Junction), 
     (n)<-[:CONSISTS_OF]-(l:Loop)-[:CONSISTS_OF]->(m),
-    (j)-[:CONSISTS_OF]->(:Node)--(l)--(:Node)<-[:CONSISTS_OF]-(i),
+    (j)-[:CONSISTS_OF]->(:Node)--(l)--(:Node)<-[:CONSISTS_OF]-(i)
     MERGE (n)<-[:STARTS_WITH]-(p:Path{time:n.time,start_junc:j.global_id, end_junc:i.global_id, path_length:1, loop_id:l.id})-[:ENDS_WITH]->(m)
     """
 
