@@ -13,7 +13,7 @@ def run_query(query, params):
 
 
 query_create_paths_standard = """
-    MATCH len=(j:Junction)-[:CONSISTS_OF]->(n:Node{time:$time})-[:SEGMENT{is_junction:$is_junction}]->(o:Node)-[:SEGMENT*{is_junction:false}]->(m:Node)<-[:CONSISTS_OF]-(i:Junction), 
+    MATCH len=(j:Junction)-[:CONSISTS_OF]->(n:Node{time:$time})-[:SEGMENT{is_junction:$is_junction}]->(o:Node)-[:SEGMENT*{is_junction:$is_junction}]->(m:Node)<-[:CONSISTS_OF]-(i:Junction), 
     (n)<-[:CONSISTS_OF]-(l:Loop)-[:CONSISTS_OF]->(m), 
     (j)-[:CONSISTS_OF]->(:Node)--(l)--(:Node)<-[:CONSISTS_OF]-(i),
     (o)<-[:CONSISTS_OF]-(l)
