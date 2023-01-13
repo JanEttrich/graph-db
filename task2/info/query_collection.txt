@@ -1,0 +1,21 @@
+Problematischer Pfad mit Länge 4 und 2: start_junc:"4241-4114", end_junc:"4241-5388-1789", time:200
+
+
+Allgemeine Pfaderstellung
+MATCH len=(j:Junction)-[:CONSISTS_OF]->(n:Node{time:200})-[:SEGMENT{is_junction:false}]->(o:Node)-[:SEGMENT*{is_junction:false}]->(m:Node)<-[:CONSISTS_OF]-(i:Junction), 
+    (n)<-[:CONSISTS_OF]-(l:Loop)-[:CONSISTS_OF]->(m), 
+    (j)-[:CONSISTS_OF]->(:Node)--(l)--(:Node)<-[:CONSISTS_OF]-(i),
+    (o)<-[:CONSISTS_OF]-(l)
+    MERGE (n)<-[:STARTS_WITH]-(p:Path{time:n.time,start_junc:j.global_id, end_junc:i.global_id, path_length:length(len)-2, loop_id:l.id})-[:ENDS_WITH]->(m)
+
+Randfall Pfad läuft komplette Loop ab
+MATCH len=(j:Junction)-[:CONSISTS_OF]->(n:Node{time:200})-[:SEGMENT{is_junction:false}]->(o:Node)-[:SEGMENT*{is_junction:false}]->(m:Node)<-[:CONSISTS_OF]-(j), 
+    (n)<-[:CONSISTS_OF]-(l:Loop)-[:CONSISTS_OF]->(m), 
+    (o)<-[:CONSISTS_OF]-(l) 
+    MERGE (n)<-[:STARTS_WITH]-(p:Qath{time:n.time,start_junc:j.global_id, end_junc:j.global_id, path_length:length(len)-2, loop_id:l.id})-[:ENDS_WITH]->(m)
+
+Randfall Pfad der Länge 1
+MATCH len=(j:Junction)-[:CONSISTS_OF]->(n:Node{time:200})-[:SEGMENT{is_junction:false}]->(m:Node)<-[:CONSISTS_OF]-(i:Junction), 
+    (n)<-[:CONSISTS_OF]-(l:Loop)-[:CONSISTS_OF]->(m),
+    (j)-[:CONSISTS_OF]->(:Node)--(l)--(:Node)<-[:CONSISTS_OF]-(i)
+    MERGE (n)<-[:STARTS_WITH]-(p:Qath{time:n.time,start_junc:j.global_id, end_junc:i.global_id, path_length:length(len)-2, loop_id:l.id})-[:ENDS_WITH]->(m)
