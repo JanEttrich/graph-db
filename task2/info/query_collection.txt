@@ -1,5 +1,14 @@
 Problematischer Pfad mit Länge 4 und 2: start_junc:"4241-4114", end_junc:"4241-5388-1789", time:200
 
+Zwei Pfade unterschiedlicher Länge mit gleicher start_id, ziel_id und loop:
+Match(p:Path{time:50, path_length:2})--(n:Node)--(q:Path{start_junc:p.start_junc, end_junc:p.end_junc})-
+-(m:Node)--(p) where q.path_length <> 2 return q, p limit 2
+
+Zwei Junctions mit gleicher global_id (6024-3464) 
+-> Zwei Pfade unterschiedlicher Loops mit start=ziel obwohl keine self-loop
+Match(p:Path{time:50, path_length:2})--(n:Node)--(q:Path{start_junc:p.start_junc, end_junc:p.end_junc})-
+-(m:Node)--(p) return q, p limit 2
+
 
 Allgemeine Pfaderstellung
 MATCH len=(j:Junction)-[:CONSISTS_OF]->(n:Node{time:200})-[:SEGMENT{is_junction:false}]->(o:Node)-[:SEGMENT*{is_junction:false}]->(m:Node)<-[:CONSISTS_OF]-(i:Junction), 
