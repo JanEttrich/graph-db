@@ -3,6 +3,9 @@ Problematischer Pfad mit Länge 4 und 2: start_junc:"4241-4114", end_junc:"4241-
 Zwei Pfade unterschiedlicher Länge mit gleicher start_id, ziel_id und loop:
 Match(p:Path{time:50, path_length:2})--(n:Node)--(q:Path{start_junc:p.start_junc, end_junc:p.end_junc})-
 -(m:Node)--(p) where q.path_length <> 2 return q, p limit 2
+start_junc: 7788-5635
+end_junc: 5289-5635-11007
+loop_id: 1128
 
 Zwei Junctions mit gleicher global_id (6024-3464) 
 -> Zwei Pfade unterschiedlicher Loops mit start=ziel obwohl keine self-loop
