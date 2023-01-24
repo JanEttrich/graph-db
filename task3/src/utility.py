@@ -5,11 +5,13 @@ from dbconfig import *
 uri = "bolt://localhost:7689"
 driver = GraphDatabase.driver(uri, auth=(user, password))
 
+
 def run_query(query, params):
     with driver.session() as session:
         result = session.run(query, params)
         df = pd.DataFrame(result.data())
     return df
+
 
 def compute_box_corners(p1, p2):
     """Compute 3d box corners based on diagonal vector
@@ -20,25 +22,56 @@ def compute_box_corners(p1, p2):
     """
     pass
 
-def sort_points_by_distance(points, to, asc: True):
+
+def sort_by_distance(points, to, timestamp, asc: True):
     """Return sorted list of points based on their euclidian distance
     to the point 'to'. Default order is ascending.
 
     Args:
         points (list): list of points to sort
         to (point): used for distance computation
+        timestamp (int): timestamp in database
         asc (bool): order of sorting
     """
     pass
 
-def fit_box_to_loop(loop_gid):
+
+def get_nodes_in_box(p1, p2, timestamp, where_clause: str = None):
+    """Return all nodes with coordinates in the box defined by p1 and p2.
+
+    Args:
+        p1 (point): point 1 in diagonal
+        p2 (point): point 2 in diagonal
+        timestamp (int): timestamp in database
+        where_clause (str): Add additional constraints to query
+    """
+    pass
+
+
+def fit_box_to_loop(loop_gid, timestamp):
     """Fit bounding box to specified loop. Takes the extremes of the
     loop-nodes to generate the bounding box.
 
     Args:
         loop_gid: global loop id
-    
+        timestamp (int): timestamp in database
+
     Returns:
         Corners of the bounding box.
-    """    
-    return 
+    """
+    pass
+
+
+def find_loops_in_box(p1, p2, timestamp):
+    """Find all loops in bounding box defined by p1 and p2.
+    Based on all nodes in bounding box,
+
+    Args:
+        p1 (point): point 1 of diagonal
+        p2 (point): point 2 of diagonal
+
+    Returns:
+        box_corners, contained_loops, loop_candidates
+    """
+    pass
+    # return box_corners, contained_loops, loop_candidates
