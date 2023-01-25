@@ -124,9 +124,16 @@ def fit_box_to_loop(loop_gid, timestamp):
     """
 
     res = run_query(query_loop_nodes, {})
+    min_x, min_y, min_z = res["x", "y", "z"].min()
+    max_x, max_y, max_z = res["x", "y", "z"].max()
 
-    # TODO get bounding box based on node coordinates
-    pass
+    p1 = np.array([min_x, min_y, min_z])
+    p2 = np.array([max_x, max_y, max_z])
+
+    constraints = [min_x, max_x, min_y, max_y, min_z, max_z]
+    assert compute_box_constraints(p1, p2) == constraints
+    
+    return p1, p2, constraints
 
 
 # maybe add option to fit box to loop with densest points in coordinate space
@@ -146,7 +153,7 @@ def find_loops_in_box(p1, p2, timestamp):
     """
     # TODO implement
     pass
-    # return box_corners, contained_loops, loop_candidates
+    # return constraints, contained_loops, loop_candidates
 
 
 def plot_bounding_box(p1, p2):
