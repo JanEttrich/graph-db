@@ -1,10 +1,14 @@
 import numpy as np
 import pandas as pd
 from neo4j import GraphDatabase
+import matplotlib.pyplot as plt
 from dbconfig import *
 
 uri = "bolt://localhost:7689"
 driver = GraphDatabase.driver(uri, auth=(user, password))
+
+# TODO maybe add option to fit box to loop with densest points in coordinate space
+# TODO statistics on coordinate distribution, e.g. boxplots for x,y,z, respectively
 
 
 def run_query(query, params):
@@ -12,6 +16,21 @@ def run_query(query, params):
         result = session.run(query, params)
         df = pd.DataFrame(result.data())
     return df
+
+
+def get_max_lifetime_loops():
+    """Returns dataframe filled with loop global ids
+    for which the lifetime is 9900 (maximum lifetime)
+    """
+    query = """
+    match (l:Loop) with l.global_id as gid,
+    min(l.time) as start_time,
+    max(l.time) - min(l.time) as lifetime
+    where lifetime = 9900
+    return gid"""
+
+    res = run_query(query, {})
+    return res
 
 
 def compute_box_constraints(p1, p2):
@@ -65,14 +84,13 @@ def sort_by_distance(points, to, asc: True):
     return [points[i] for i in sorted_index]  # maybe also return sorted indexes
 
 
-def get_nodes_in_box(p1, p2, timestamp, where_clause: str = None):
+def get_nodes_in_box(p1, p2, timestamp):
     """Return all nodes with coordinates in the box defined by p1 and p2.
 
     Args:
         p1 (point): point 1 in diagonal
         p2 (point): point 2 in diagonal
         timestamp (int): timestamp in database
-        where_clause (str): Add additional constraints to query
 
     Returns:
         Dataframe with node ids, coordinates and corresponding loop candidates
@@ -98,8 +116,12 @@ def get_nodes_in_box(p1, p2, timestamp, where_clause: str = None):
 
 
 def convert_df_to_points(df: pd.DataFrame):
-    # TODO implement
-    pass
+    points = []
+    for _, row in df[["x", "y", "z"]].iterrows():
+        x, y, z = row
+        points.append(np.array([x, y, z]))
+
+    return points
 
 
 def fit_box_to_loop(loop_gid, timestamp):
@@ -113,6 +135,7 @@ def fit_box_to_loop(loop_gid, timestamp):
     Returns:
         Diagonal points and constraints of the bounding box
     """
+
     query_loop_nodes = f"""
     match
     (n:Node{{time:{timestamp}}})--(l:Loop{{global_id:{loop_gid}, time:{timestamp}}})
@@ -124,20 +147,16 @@ def fit_box_to_loop(loop_gid, timestamp):
     """
 
     res = run_query(query_loop_nodes, {})
-    min_x, min_y, min_z = res["x", "y", "z"].min()
-    max_x, max_y, max_z = res["x", "y", "z"].max()
+    min_x, min_y, min_z = res[["x", "y", "z"]].min()
+    max_x, max_y, max_z = res[["x", "y", "z"]].max()
 
     p1 = np.array([min_x, min_y, min_z])
     p2 = np.array([max_x, max_y, max_z])
 
     constraints = [min_x, max_x, min_y, max_y, min_z, max_z]
     assert compute_box_constraints(p1, p2) == constraints
-    
+
     return p1, p2, constraints
-
-
-# maybe add option to fit box to loop with densest points in coordinate space
-# TODO statistics on coordinate distribution, e.g. boxplots for x,y,z, respectively
 
 
 def find_loops_in_box(p1, p2, timestamp):
@@ -155,6 +174,18 @@ def find_loops_in_box(p1, p2, timestamp):
     pass
     # return constraints, contained_loops, loop_candidates
 
+
+def plot_points(points, f_name):
+    fig = plt.figure()
+    ax = fig.add_subplot(projection="3d")
+
+    for x, y, z in points:
+        ax.scatter(x, y, z, c="b", alpha=0.8)
+
+    fig.savefig(f"../figures/{f_name}.pdf", format="pdf")
+
+
+# NOTE: functions below maybe not necessary
 
 def plot_bounding_box(p1, p2):
     """Plot bounding box in 3d space.
