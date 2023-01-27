@@ -20,7 +20,8 @@ def run_query(query, params):
 
 def get_max_lifetime_loops():
     """Returns dataframe filled with loop global ids
-    for which the lifetime is 9900 (maximum lifetime)
+    for which the lifetime is 9900 (maximum lifetime).
+    Lifetime starts at 50 and ends at 9950
     """
     query = """
     match (l:Loop) with l.global_id as gid,
@@ -67,7 +68,7 @@ def check_same_box(p1, p2, p3, p4):
     return compute_box_constraints(p1, p2) == compute_box_constraints(p3, p4)
 
 
-def sort_by_distance(points, to, asc: True):
+def sort_by_distance(points, to, asc=True):
     """Return sorted list of points based on their euclidian distance
     to the point 'to'. Default order is ascending.
 
@@ -81,7 +82,7 @@ def sort_by_distance(points, to, asc: True):
     if not asc:
         sorted_index = sorted_index[::-1]
 
-    return [points[i] for i in sorted_index]  # maybe also return sorted indexes
+    return [points[i] for i in sorted_index], sorted_index
 
 
 def get_nodes_in_box(p1, p2, timestamp):
@@ -111,7 +112,6 @@ def get_nodes_in_box(p1, p2, timestamp):
     """
 
     res = run_query(query_nodes, {})
-
     return res
 
 
@@ -122,6 +122,9 @@ def convert_df_to_points(df: pd.DataFrame):
         points.append(np.array([x, y, z]))
 
     return points
+
+
+# TODO fit_box_to_query(query) --> fits box to nodes returned by this query
 
 
 def fit_box_to_loop(loop_gid, timestamp):
@@ -147,11 +150,17 @@ def fit_box_to_loop(loop_gid, timestamp):
     """
 
     res = run_query(query_loop_nodes, {})
-    min_x, min_y, min_z = res[["x", "y", "z"]].min()
-    max_x, max_y, max_z = res[["x", "y", "z"]].max()
+    if "x" in res.columns:
+        min_x, min_y, min_z = res[["x", "y", "z"]].min()
+        max_x, max_y, max_z = res[["x", "y", "z"]].max()
 
-    p1 = np.array([min_x, min_y, min_z])
-    p2 = np.array([max_x, max_y, max_z])
+        p1 = np.array([min_x, min_y, min_z])
+        p2 = np.array([max_x, max_y, max_z])
+    else:
+        print(
+            f"Could not compute bounding box for loop {loop_gid} at time {timestamp} because dataframe columns are {res.columns}"
+        )
+        return None, None, None  # same number of values to unpack
 
     constraints = [min_x, max_x, min_y, max_y, min_z, max_z]
     assert compute_box_constraints(p1, p2) == constraints
@@ -170,9 +179,33 @@ def find_loops_in_box(p1, p2, timestamp):
     Returns:
         box_corners, contained_loops, loop_candidates
     """
-    # TODO implement
-    pass
-    # return constraints, contained_loops, loop_candidates
+    # first: return all nodes and loop candidates
+    # for all loop candidates, query nodes and check if all nodes are contained in box
+    # only return loop ids for which the entirety of nodes is in the bounding box
+    node_df = get_nodes_in_box(p1, p2, timestamp)
+    loop_candidates = []
+    for row in node_df["loop_candidates"]:
+        for e in row:
+            loop_candidates.append(e)
+
+    node_set = set(node_df["node_id"])
+    loop_candidates = [*set(loop_candidates)]
+
+    query = f"""
+    match (n:Node)--(l:Loop{{time:{timestamp}}})
+    where l.global_id in {loop_candidates}
+    return n.time as timestamp,
+    n.id as node_id,
+    l.global_id as gid
+    """
+    loops_df = run_query(query, {})
+
+    complete_loops_in_box = []
+    for e in loop_candidates:
+        if set(loops_df[loops_df["gid"] == e]["node_id"]).issubset(node_set):
+            complete_loops_in_box.append(e)
+
+    return complete_loops_in_box, loop_candidates
 
 
 def plot_points(points, f_name):
@@ -186,6 +219,7 @@ def plot_points(points, f_name):
 
 
 # NOTE: functions below maybe not necessary
+
 
 def plot_bounding_box(p1, p2):
     """Plot bounding box in 3d space.
