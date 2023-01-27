@@ -26,7 +26,7 @@ nearest_nodes: pd.DataFrame = get_nodes_in_box(
 
 points = convert_df_to_points(nearest_nodes)
 _, sorted_indexes = sort_by_distance(points, origin)
-nearest_nodes = nearest_nodes.reindex()  # df now sorted by distance (ascending)
+nearest_nodes = nearest_nodes.reindex(sorted_indexes)  # df now sorted by distance (ascending)
 
 loop_candidates = []
 for _, row in nearest_nodes.iterrows():
@@ -58,5 +58,5 @@ for ts in range(50, 10000, 50):
 
 print("Terminated time step bounding boxes computation.\n")
 print(step_bboxes)
-with open("../output/loop_criterium_res.txt", "w") as f:
+with open("../output/loop_criterium_res_2.json", "w") as f:
     f.write(json.dumps(step_bboxes))

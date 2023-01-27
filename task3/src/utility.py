@@ -177,7 +177,7 @@ def find_loops_in_box(p1, p2, timestamp):
         p2 (point): point 2 of diagonal
 
     Returns:
-        box_corners, contained_loops, loop_candidates
+        contained_loops, loop_candidates
     """
     # first: return all nodes and loop candidates
     # for all loop candidates, query nodes and check if all nodes are contained in box
