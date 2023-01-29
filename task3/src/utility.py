@@ -69,6 +69,13 @@ def check_same_box(p1, p2, p3, p4):
 
 
 def merge_boxes(box1, box2):
+    """Merges two boxes into a combined box by taking minimum and maximum coordinates 
+    of all axis from both boxes.
+
+    Args:
+        box1 (list): box constraints for first box
+        box2 (list): box constraints for second box
+    """
     constraints = []
     for i in range(0,3):
         constraints.append(min(box1[i], box2[i]))
@@ -81,8 +88,17 @@ def merge_boxes(box1, box2):
 
 
 def compute_distance_of_box_to_point(p1, p2, to):
-    center = [2*(p1[0]+p2[0]), 2*(p1[1]+p2[1]), 2*(p1[2]+p2[2])]
+    """Return the distance of a box defined by two vectors to the point 'to'
+    based on the center of the box.
+
+    Args:
+        p1 (point): point 1 in diagonal
+        p2 (point): point 2 in diagonal
+        to (point): used for distance computation
+    """
+    center = [(p1[0]+p2[0])/2.0, (p1[1]+p2[1])/2.0, (p1[2]+p2[2])/2.0]
     distance = np.linalg.norm(to - center)
+
     return distance
 
 def sort_by_distance(points, to, asc=True):
@@ -225,6 +241,16 @@ def find_loops_in_box(p1, p2, timestamp):
     return complete_loops_in_box, loop_candidates
 
 def calculate_density_in_box(timestamp, p1=(0,0,0), p2=(12375, 12375, 12375)):
+    """Return the density of a box, calulated by adding all distance attributes 
+    of SEGMENT-relationships and dividing by the box volume. Default box argument
+    is the physically present volume.
+
+    Args:
+        timestamp (int): timestamp in database
+        p1 (point): point 1 of diagonal
+        p2 (point): point 2 of diagonal
+    """ 
+
     query = f"""
     MATCH (n:Node{{time:{timestamp}}})-[s:SEGMENT]-(m:Node)
     WHERE {p1[0]} <= n.x <= {p2[0]}
@@ -233,6 +259,8 @@ def calculate_density_in_box(timestamp, p1=(0,0,0), p2=(12375, 12375, 12375)):
     RETURN DISTINCT n.id, m.id, s.distance AS distance
     """
     segment_distances = run_query(query, {})
+    if segment_distances.empty:
+        return 0
     
     box = compute_box_constraints(p1, p2)
     volume = abs(box[0]-box[1])*abs(box[2]-box[3])*abs(box[4]-box[5])

@@ -16,7 +16,10 @@ for timestamp in range(50,10000,50):
 
     # work with loop candidates if no loop is fully in box
     if not loops:
-        loops = loop_candidates
+        if not loop_candidates:
+            continue
+        else:
+            loops = loop_candidates
 
     find_lomer_query = f"""
     MATCH (l:Loop{{time:{timestamp}}})--(:Node)--(j:Junction{{type:1}})--(:Node)--(k:Loop) 
