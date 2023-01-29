@@ -255,7 +255,10 @@ def calculate_density_in_box(timestamp, p1=(0,0,0), p2=(12375, 12375, 12375)):
     MATCH (n:Node{{time:{timestamp}}})-[s:SEGMENT]-(m:Node)
     WHERE {p1[0]} <= n.x <= {p2[0]}
     AND {p1[1]} <= n.y <= {p2[1]}
-    AND {p1[2]} <= n.z <= {p2[2]} 
+    AND {p1[2]} <= n.z <= {p2[2]}
+    AND {p1[0]} <= m.x <= {p2[0]}
+    AND {p1[1]} <= m.y <= {p2[1]}
+    AND {p1[2]} <= m.z <= {p2[2]} 
     RETURN DISTINCT n.id, m.id, s.distance AS distance
     """
     segment_distances = run_query(query, {})
