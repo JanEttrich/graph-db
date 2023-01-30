@@ -1,3 +1,4 @@
+import json
 import numpy as np
 import pandas as pd
 from neo4j import GraphDatabase
@@ -231,3 +232,23 @@ def plot_bounding_box(p1, p2):
     """
     # TODO implement
     pass
+
+def read_bboxes_from_json(filepath):
+    with open("../output/loop_criterium_res_2.json", "r") as f:
+        bbs = json.load(f)
+        total_boxes = {}
+        for loop in bbs:
+            x, y, z = [], [], []
+            for time_step in bbs[loop]:
+                x.append(time_step[0][0])
+                x.append(time_step[1][0])
+                y.append(time_step[0][1])
+                y.append(time_step[1][1])
+                z.append(time_step[0][2])
+                z.append(time_step[1][2])
+            total_boxes[loop] = []
+            total_boxes[loop].append((min(x), min(y), min(z)))
+            total_boxes[loop].append((max(x), max(y), max(z)))
+    with open("../output/loop_criterium_final.json", "w") as nf:
+        json.dump(total_boxes, nf)
+
