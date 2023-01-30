@@ -69,6 +69,39 @@ def check_same_box(p1, p2, p3, p4):
     return compute_box_constraints(p1, p2) == compute_box_constraints(p3, p4)
 
 
+def merge_boxes(box1, box2):
+    """Merges two boxes into a combined box by taking minimum and maximum coordinates 
+    of all axis from both boxes.
+
+    Args:
+        box1 (list): box constraints for first box
+        box2 (list): box constraints for second box
+    """
+    constraints = []
+    for i in range(0,3):
+        constraints.append(min(box1[i], box2[i]))
+    for i in range(3,6):
+        constraints.append(max(box1[i], box2[i]))
+
+    p1 = np.array([constraints[0], constraints[2], constraints[4]])
+    p2 = np.array([constraints[1], constraints[3], constraints[5]])
+    return p1, p2, constraints
+
+
+def compute_distance_of_box_to_point(p1, p2, to):
+    """Return the distance of a box defined by two vectors to the point 'to'
+    based on the center of the box.
+
+    Args:
+        p1 (point): point 1 in diagonal
+        p2 (point): point 2 in diagonal
+        to (point): used for distance computation
+    """
+    center = [(p1[0]+p2[0])/2.0, (p1[1]+p2[1])/2.0, (p1[2]+p2[2])/2.0]
+    distance = np.linalg.norm(to - center)
+
+    return distance
+
 def sort_by_distance(points, to, asc=True):
     """Return sorted list of points based on their euclidian distance
     to the point 'to'. Default order is ascending.
@@ -208,6 +241,36 @@ def find_loops_in_box(p1, p2, timestamp):
 
     return complete_loops_in_box, loop_candidates
 
+def calculate_density_in_box(timestamp, p1=(0,0,0), p2=(12375, 12375, 12375)):
+    """Return the density of a box, calulated by adding all distance attributes 
+    of SEGMENT-relationships and dividing by the box volume. Default box argument
+    is the physically present volume.
+
+    Args:
+        timestamp (int): timestamp in database
+        p1 (point): point 1 of diagonal
+        p2 (point): point 2 of diagonal
+    """ 
+
+    query = f"""
+    MATCH (n:Node{{time:{timestamp}}})-[s:SEGMENT]-(m:Node)
+    WHERE {p1[0]} <= n.x <= {p2[0]}
+    AND {p1[1]} <= n.y <= {p2[1]}
+    AND {p1[2]} <= n.z <= {p2[2]}
+    AND {p1[0]} <= m.x <= {p2[0]}
+    AND {p1[1]} <= m.y <= {p2[1]}
+    AND {p1[2]} <= m.z <= {p2[2]} 
+    RETURN DISTINCT n.id, m.id, s.distance AS distance
+    """
+    segment_distances = run_query(query, {})
+    if segment_distances.empty:
+        return 0
+    
+    box = compute_box_constraints(p1, p2)
+    volume = abs(box[0]-box[1])*abs(box[2]-box[3])*abs(box[4]-box[5])
+    distances = segment_distances["distance"].sum()
+
+    return distances / volume
 
 def plot_points(points, f_name):
     fig = plt.figure()
