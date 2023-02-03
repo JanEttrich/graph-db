@@ -17,6 +17,7 @@ def run_query(query, params):
 loop_query = """MATCH (l:Loop{time:$time}) RETURN l.global_id as id"""
 junction_query = """MATCH (j:Junction{time: $time}) RETURN j.global_id, j.type"""
 create_eloop_query = """MERGE (:ELoop{time: $time, id:$id, jtypes:$jtypes})"""
+create_connections_query = """MERGE (:ELoop{time: $time1, id:$id1})-[:CONNECTION]-((:ELoop{time: $time2, id:$id2}))"""
 
 final_dict = {
     "id": [],
@@ -46,7 +47,18 @@ for ts in range(50, 10000, 50):
             final_df.loc[loop_id, ts]["connected_loops"].extend(
                 [int(loop) for loop in loops if int(loop) != loop_id])
 
+curr_time = 50
 for index, row in final_df.iterrows():
-    run_query(create_eloop_query, {"id": row["id"], "time" : row["time"], "jtypes": row["jtypes"]})
+    run_query(create_eloop_query, {
+              "id": index["id"], "time": index["time"], "jtypes": row["jtypes"]})
+    if (index["time"] != curr_time):
+        curr_time = index["time"]
+        print(curr_time)
 
-
+for index, row in final_df.iterrows():
+    for loop in row["connected_loops"]:
+        run_query(create_connections_query, {
+                  "id1": index["id"], "time1": index["time"], "id2": loop, "time2": index["time"]})
+    if (index["time"] != curr_time):
+        curr_time = index["time"]
+        print(curr_time)
