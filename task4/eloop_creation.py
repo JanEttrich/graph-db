@@ -17,7 +17,10 @@ def run_query(query, params):
 loop_query = """MATCH (l:Loop{time:$time}) RETURN l.global_id as id"""
 junction_query = """MATCH (j:Junction{time: $time}) RETURN j.global_id, j.type"""
 create_eloop_query = """MERGE (:ELoop{time: $time, id:$id, jtypes:$jtypes})"""
-create_connections_query = """MERGE (:ELoop{time: $time1, id:$id1})-[:CONNECTION]-((:ELoop{time: $time2, id:$id2}))"""
+create_connections_query = """
+MATCH (l1:ELoop{time: $time1, id:$id1})
+MATCH (l2:ELoop{time: $time2, id:$id2})
+MERGE (l1)-[:CONNECTION]-(l2)"""
 
 final_dict = {
     "id": [],
