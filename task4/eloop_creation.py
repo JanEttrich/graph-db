@@ -50,15 +50,15 @@ for ts in range(50, 10000, 50):
 curr_time = 50
 for index, row in final_df.iterrows():
     run_query(create_eloop_query, {
-              "id": index["id"], "time": index["time"], "jtypes": row["jtypes"]})
-    if (index["time"] != curr_time):
-        curr_time = index["time"]
+              "id": index[0], "time": index[1], "jtypes": row["jtypes"]})
+    if (index[1] != curr_time):
+        curr_time = index[1]
         print(curr_time)
 
 for index, row in final_df.iterrows():
     for loop in row["connected_loops"]:
         run_query(create_connections_query, {
-                  "id1": index["id"], "time1": index["time"], "id2": loop, "time2": index["time"]})
-    if (index["time"] != curr_time):
-        curr_time = index["time"]
+                  "id1": index[0], "time1": index[1], "id2": loop, "time2": index[1]})
+    if (index[1] != curr_time):
+        curr_time = index[1]
         print(curr_time)
