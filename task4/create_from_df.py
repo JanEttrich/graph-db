@@ -35,13 +35,13 @@ final_df["connected_loops"] = [
     [int(e) for e in l if e != ""] for l in final_df["connected_loops"]
 ]
 
-# curr_time = 50
-# for index, row in final_df.iterrows():
-#     run_query(create_eloop_query, {
-#               "id": index[0], "time": index[1], "jtypes": row["jtypes"]})
-#     if (index[1] != curr_time):
-#         curr_time = index[1]
-#         print(curr_time)
+curr_time = 50
+for index, row in final_df.iterrows():
+    run_query(create_eloop_query, {
+              "id": index[0], "time": index[1], "jtypes": row["jtypes"]})
+    if (index[1] != curr_time):
+        curr_time = index[1]
+        print(curr_time)
 
 # # sort df such that for each time step, longest list of connected loops is first
 # final_df.reset_index(inplace=True)
@@ -61,10 +61,8 @@ final_df["connected_loops"] = [
 # final_df = final_df[final_df["connected_loops"].apply(lambda x: len(x) != 0)]
 # final_df.to_csv("out/optimized_dataframe.csv")
 
-curr_time = 800
+curr_time = 50
 for row in final_df.itertuples():
-    if row.Index[1] < 800:
-        continue
     q = create_connections_query(
         row.Index[1], row.Index[0], [int(x) for x in row.connected_loops]
     )
