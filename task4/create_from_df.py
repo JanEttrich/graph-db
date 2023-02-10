@@ -24,7 +24,7 @@ WHERE l2.time=50 AND l2.id IN {connections}
 MERGE (l1)-[:CONNECTION]-(l2)"""
 )
 
-final_df = pd.read_csv("out/optimized_dataframe.csv")
+final_df = pd.read_csv("out/dataframe.csv")
 final_df.set_index(["id", "time"], inplace=True)
 final_df["jtypes"] = [x.strip("[]").split(",") for x in final_df["jtypes"]]
 final_df["jtypes"] = [[int(e) for e in l if e != ""] for l in final_df["jtypes"]]
@@ -60,6 +60,17 @@ for index, row in final_df.iterrows():
 # # eliminate all rows with empty connected loops list
 # final_df = final_df[final_df["connected_loops"].apply(lambda x: len(x) != 0)]
 # final_df.to_csv("out/optimized_dataframe.csv")
+
+final_df = pd.read_csv("out/optimized_dataframe.csv")
+final_df.set_index(["id", "time"], inplace=True)
+final_df["jtypes"] = [x.strip("[]").split(",") for x in final_df["jtypes"]]
+final_df["jtypes"] = [[int(e) for e in l if e != ""] for l in final_df["jtypes"]]
+final_df["connected_loops"] = [
+    x.strip("[]").split(", ") for x in final_df["connected_loops"]
+]
+final_df["connected_loops"] = [
+    [int(e) for e in l if e != ""] for l in final_df["connected_loops"]
+]
 
 curr_time = 50
 for row in final_df.itertuples():
