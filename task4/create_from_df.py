@@ -17,16 +17,24 @@ def run_query(query, params):
 loop_query = """MATCH (l:Loop{time:$time}) RETURN l.global_id as id"""
 junction_query = """MATCH (j:Junction{time: $time}) RETURN j.global_id, j.type"""
 create_eloop_query = """CREATE (:ELoop{time: $time, id:$id, jtypes:$jtypes})"""
-create_connections_query = """
-MATCH (l1:ELoop{time: $time1, id:$id1}), (l2:ELoop{time: $time2, id:$id2})
+# create_connections_query = (
+#     lambda time, id1, id2: f"""
+# MATCH (l1:ELoop{{time: {time}, id:{id1}}}), (l2:ELoop{{time: {time}, id:{id2}}})
+# MERGE (l1)-[:CONNECTION]-(l2)"""
+# )
+create_connections_query = (
+    lambda time, id1, connections: f"""
+MATCH (l1:ELoop{{time: {time}, id:{id1}}}), (l2:ELoop)
+WHERE l2.time=50 AND l2.id IN {connections}
 MERGE (l1)-[:CONNECTION]-(l2)"""
+)
 
 final_df = pd.read_csv("out/dataframe.csv")
 final_df.set_index(["id", "time"], inplace=True)
 final_df["jtypes"] = [x.strip("[]").split(",") for x in final_df["jtypes"]]
-final_df["connected_loops"] = [
-    x.strip("[]").split(",") for x in final_df["connected_loops"]
-]
+final_df["jtypes"] = [[int(e) for e in l if e != ''] for l in final_df["jtypes"]]
+final_df["connected_loops"] = [x.strip("[]").split(", ") for x in final_df["connected_loops"]]
+final_df["connected_loops"] = [[int(e) for e in l if e != ''] for l in final_df["connected_loops"]]
 
 # curr_time = 50
 # for index, row in final_df.iterrows():
@@ -36,13 +44,32 @@ final_df["connected_loops"] = [
 #         curr_time = index[1]
 #         print(curr_time)
 
+# sort df such that for each time step, longest list of connected loops is first
+final_df.reset_index(inplace=True)
+final_df["len"] = final_df["connected_loops"].apply(lambda x: len(x))
+final_df = final_df.sort_values(by=["time","len"], ascending=[True,False])
+final_df.drop(labels="len", axis=1, inplace=True)
+final_df.set_index(["id", "time"], inplace=True)
+
+# optimize dataframe adjacency matrix
+for row in final_df.itertuples():
+    loop_from = row.Index[0]
+    t = row.Index[1]
+    for loop_to in row.connected_loops:
+        final_df["connected_loops"][loop_to, t].remove(loop_from)
+
+# eliminate all rows with empty connected loops list
+final_df = final_df[final_df["connected_loops"].apply(lambda x: len(x) != 0)]
+final_df.to_csv("out/optimized_dataframe.csv")
+
+assert False
+
 curr_time = 50
 for index, row in final_df.iterrows():
-    for loop in row["connected_loops"]:
-        run_query(
-            create_connections_query,
-            {"id1": index[0], "time1": index[1], "id2": loop, "time2": index[1]},
-        )
+    q = create_connections_query(
+        index[1], index[0], [int(x) for x in row["connected_loops"]]
+    )
+    run_query(q, {})
     if index[1] != curr_time:
         curr_time = index[1]
         print(curr_time)
