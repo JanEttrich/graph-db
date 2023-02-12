@@ -34,7 +34,7 @@ class Neo4jShell(cmd.Cmd):
         if not self.logged_in:
             print('Not logged in to database, login first!')
             return
-        params = self.parser.parse_args(args)
+        params = self.parser.parse_args(args.split())
         ########################################################
         # Zugriff auf params
         time = params.time
