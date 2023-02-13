@@ -13,28 +13,41 @@ def run_query(query, params):
         df = pd.DataFrame(result.data())
     return df
 
-
+set_query = lambda time, id, jtypes: f"""MATCH (l:ELoop{{time: {time}, id: {id}}}) SET l.jtypes={jtypes}"""
 loop_query = """MATCH (l:Loop{time:$time}) RETURN l.global_id as id"""
 junction_query = """MATCH (j:Junction{time: $time}) RETURN j.global_id, j.type"""
-create_eloop_query = """CREATE (:ELoop{time: $time, id:$id, jtypes:$jtypes})"""
+create_eloop_query = """CREATE (:EmLoop{time: $time, id:$id, jtypes:$jtypes})"""
 create_connections_query = (
     lambda time, id1, connections: f"""
-MATCH (l1:ELoop{{time: {time}, id:{id1}}}), (l2:ELoop)
-WHERE l2.time=50 AND l2.id IN {connections}
+MATCH (l1:EmLoop{{time: {time}, id:{id1}}}), (l2:EmLoop)
+WHERE l2.time={time} AND l2.id IN {connections}
 MERGE (l1)-[:CONNECTION]-(l2)"""
 )
-
+"""
+print("Loading file")
 final_df = pd.read_csv("out/dataframe.csv")
+print("File loaded")
 final_df.set_index(["id", "time"], inplace=True)
 final_df["jtypes"] = [x.strip("[]").split(",") for x in final_df["jtypes"]]
+print(1)
 final_df["jtypes"] = [[int(e) for e in l if e != ""] for l in final_df["jtypes"]]
+print(2)
 final_df["connected_loops"] = [
     x.strip("[]").split(", ") for x in final_df["connected_loops"]
 ]
+print(3)
 final_df["connected_loops"] = [
     [int(e) for e in l if e != ""] for l in final_df["connected_loops"]
 ]
 
+curr_time = 50
+print("Start")
+for index, row in final_df.iterrows():
+    run_query(create_eloop_query, {
+              "id": index[0], "time": index[1], "jtypes": row["jtypes"]})
+    if (index[1] != curr_time):
+        curr_time = index[1]
+        print(curr_time)
 curr_time = 50
 for index, row in final_df.iterrows():
     run_query(create_eloop_query, {
@@ -42,7 +55,7 @@ for index, row in final_df.iterrows():
     if (index[1] != curr_time):
         curr_time = index[1]
         print(curr_time)
-
+"""
 # # sort df such that for each time step, longest list of connected loops is first
 # final_df.reset_index(inplace=True)
 # final_df["len"] = final_df["connected_loops"].apply(lambda x: len(x))
@@ -72,6 +85,7 @@ final_df["connected_loops"] = [
     [int(e) for e in l if e != ""] for l in final_df["connected_loops"]
 ]
 
+print("Start")
 curr_time = 50
 for row in final_df.itertuples():
     q = create_connections_query(
