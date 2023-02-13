@@ -56,7 +56,8 @@ def get_jtypes_query(ids): return f"""
 """
 
 
-def generateEmbedding(timestep, jtypes, strategy, limit):
+def generateEmbedding(timestep, show_jtypes, strategy, limit):
+    
     # Ensure that old projected graph is removed
     _ = run_query(drop_graph_query, {})
 
@@ -67,10 +68,6 @@ def generateEmbedding(timestep, jtypes, strategy, limit):
     result = run_query(fastRP_query, {})
     jtypes = run_query(get_jtypes_query(list(result["loop"])), {})
     occurences = jtypes.explode('jtypes')['jtypes'].value_counts()
-    """
-  print(result)
-  print(jtypes)
-  """
     occurence_dict = dict(occurences)
     embedding_arr = np.asarray(list(result.embedding))
     loop_dict = {key: pd.DataFrame(columns=["loop","x", "y"]) for key in occurence_dict.keys()}
@@ -104,11 +101,9 @@ def generateEmbedding(timestep, jtypes, strategy, limit):
 
     fig, ax = plt.subplots()
     for jtype, df in loop_dict.items():
-      ax.scatter(df["x"], df["y"], label=jtype)
+      if jtype in show_jtypes:
+        ax.scatter(df["x"], df["y"], label=jtype, s=5)
 
-    ax.legend(loc='upper right')
-    plt.savefig(f"out_{round(time.time())}.png")
+    ax.legend(loc='upper right',title="Junction\nType")
+    plt.savefig(f"out/{round(time.time())}.png")
     plt.close()
-
-
-generateEmbedding(50, [], [], 100000)

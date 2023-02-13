@@ -2,6 +2,7 @@ import cmd
 from parser import *
 from neo4j import GraphDatabase
 import argparse
+from embeddings import *
 
 uri = "bolt://localhost:7689"
 
@@ -35,11 +36,9 @@ class Neo4jShell(cmd.Cmd):
             print('Not logged in to database, login first!')
             return
         params = self.parser.parse_args(args.split())
-        ########################################################
-        # Zugriff auf params
-        time = params.time
-        # Hier sollte embedding funktion mit params aufgerufen werden und png erzeugt werden
-        ########################################################
+        print("Generating embeddings...")
+        generateEmbedding(params.time, params.jtypes, params.strat ,params.limit)
+        print("Embeddings generated!")
         return
 
     def do_logout(self, arg):
