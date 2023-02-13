@@ -1,18 +1,11 @@
 import pandas as pd
-from neo4j import GraphDatabase
 from collections import Counter
-from dbconfig import *
-import json
 import numpy as np
 from sklearn.manifold import TSNE
 import matplotlib.pyplot as plt
 import time
 
-uri = "bolt://localhost:7689"
-driver = GraphDatabase.driver(uri, auth=(user, password))
-
-
-def run_query(query, params):
+def run_query(query, params, driver):
     with driver.session() as session:
         result = session.run(query, params)
         df = pd.DataFrame(result.data())
@@ -56,17 +49,17 @@ def get_jtypes_query(ids): return f"""
 """
 
 
-def generateEmbedding(timestep, show_jtypes, strategy, limit):
+def generateEmbedding(timestep, show_jtypes, strategy, limit, driver):
     
     # Ensure that old projected graph is removed
-    _ = run_query(drop_graph_query, {})
+    _ = run_query(drop_graph_query, {}, driver)
 
     # Project the graph
-    _ = run_query(projection_query(timestep, limit), {})
+    _ = run_query(projection_query(timestep, limit), {}, driver)
 
     # Generate embeddings
-    result = run_query(fastRP_query, {})
-    jtypes = run_query(get_jtypes_query(list(result["loop"])), {})
+    result = run_query(fastRP_query, {}, driver)
+    jtypes = run_query(get_jtypes_query(list(result["loop"])), {}, driver)
     occurences = jtypes.explode('jtypes')['jtypes'].value_counts()
     occurence_dict = dict(occurences)
     embedding_arr = np.asarray(list(result.embedding))
