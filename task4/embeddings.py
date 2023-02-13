@@ -1,10 +1,10 @@
 import pandas as pd
 from neo4j import GraphDatabase
 from dbconfig import *
+import json
 
 uri = "bolt://localhost:7689"
 driver = GraphDatabase.driver(uri, auth=(user, password))
-
 
 def run_query(query, params):
     with driver.session() as session:
@@ -12,32 +12,51 @@ def run_query(query, params):
         df = pd.DataFrame(result.data())
     return df
 
-projection_query = """
-MATCH (l: ELoop{time: 50})
-WITH collect(l) AS loops
-CALL gds.graph.project(
+drop_graph_query = """CALL gds.graph.drop('eloops', false) YIELD graphName"""
+
+projection_query = lambda time, limit: f"""
+CALL gds.graph.project.cypher(
   'eloops',
-  'loops',
-  {
-    CONNECTION: {
-      orientation: 'UNDIRECTED',
-    }
-  },
-  { nodeProperties: ['jtypes'] }
-)
+  'MATCH (n:EmLoop{{time:{time}}}) RETURN id(n) AS id, n.jtypes AS jtypes LIMIT {limit}',
+  'MATCH (n)-[r:CONNECTION]-(m:EmLoop{{time:{time}}}) RETURN id(n) AS source, id(m) AS target',
+  {{
+  validateRelationships: false
+  }})
+YIELD
+  graphName AS graph, nodeQuery, nodeCount AS nodes, relationshipQuery, relationshipCount AS rels
 """
 
 fastRP_query = """
 CALL gds.fastRP.stream(
-  graphName: eloops,
-  configuration: {
-    embeddingDimension: 256,
-    iterationWeights: 2,
-  }
-) YIELD
-  nodeId: Integer,
-  embedding: List of Float
+'eloops',
+{
+embeddingDimension:256,
+iterationWeights: [2]
+}
+)
+YIELD
+nodeId as loop,
+embedding
 """
-params = {}
-result = run_query(projection_query, params)
-print(result)
+
+get_jtypes_query = lambda ids: f"""
+  MATCH (e:EmLoop)
+  WHERE id(e) IN {ids}
+  RETURN id(e), e.jtypes
+"""
+
+def generateEmbedding(time, jtypes, strategy, limit):
+  # Ensure that old projected graph is removed
+  _ = run_query(drop_graph_query, {})
+
+  # Project the graph
+  _ = run_query(projection_query(time, limit), {})
+
+  # Generate embeddings
+  result = run_query(fastRP_query, {})
+  jtypes = run_query(get_jtypes_query(list(result["loop"])), {})
+  print(result)
+  print(jtypes)   
+
+
+generateEmbedding(300, [], [], 50)
